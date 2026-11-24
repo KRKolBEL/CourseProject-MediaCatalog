@@ -1,0 +1,17 @@
+# Docker для WPF (используется для сборки и запуска тестов в CI/CD)
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+COPY ["MediaCatalog.sln", "./"]
+COPY ["MediaCatalog.Core/MediaCatalog.Core.csproj", "MediaCatalog.Core/"]
+COPY ["MediaCatalog.WPF/MediaCatalog.WPF.csproj", "MediaCatalog.WPF/"]
+COPY ["MediaCatalog.Tests/MediaCatalog.Tests.csproj", "MediaCatalog.Tests/"]
+RUN dotnet restore "MediaCatalog.sln"
+
+COPY . .
+WORKDIR "/src/MediaCatalog.Tests"
+RUN dotnet test "MediaCatalog.Tests.csproj" -c Release --logger "console;verbosity=detailed"
+
+# Финальный образ для демонстрации
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS final
+WORKDIR /app
+COPY --from=build /src .
